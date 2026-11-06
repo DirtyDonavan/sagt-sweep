@@ -88,9 +88,14 @@ jobs:
             --json number,title --jq 'map(select(.title == env.ALARM_TITLE)) | .[0].number // empty' \
             || echo "")
           dead_checks=0
+          # Dead means the server SAYS signed out, not just alive:false.
+          # alive only means the hourly token has not expired, and it lapses
+          # whenever a renewal tick is skipped (a cooling-off pause, say),
+          # which raised eight false alarms between 04/11 and 06/11. A lapsed
+          # token with no error is "unsure": it neither counts nor resets.
           check_session() {
             state=$(curl -s --max-time 15 https://sagt-api.vercel.app/v1/health \
-              | python3 -c "import sys,json;s=json.load(sys.stdin)['session'];e=s.get('lastError') or '';print('dead' if not s['alive'] or 'signed out' in e else 'ok' if not e else 'unsure')" \
+              | python3 -c "import sys,json;s=json.load(sys.stdin)['session'];e=s.get('lastError') or '';print('dead' if 'signed out' in e else 'ok' if s['alive'] and not e else 'unsure')" \
               2>/dev/null || echo unsure)
             case "$state" in
               dead)
