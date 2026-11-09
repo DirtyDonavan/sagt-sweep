@@ -94,7 +94,7 @@ jobs:
           # which raised eight false alarms between 04/11 and 06/11. A lapsed
           # token with no error is "unsure": it neither counts nor resets.
           check_session() {
-            state=$(curl -s --max-time 15 https://sagt-api.vercel.app/v1/health \
+            state=$(curl -s --max-time 15 https://api.sagtonline.co.za/v1/health \
               | python3 -c "import sys,json;s=json.load(sys.stdin)['session'];e=s.get('lastError') or '';print('dead' if 'signed out' in e else 'ok' if s['alive'] and not e else 'unsure')" \
               2>/dev/null || echo unsure)
             case "$state" in
@@ -104,7 +104,7 @@ jobs:
                 if [ "$dead_checks" -ge 3 ] && [ -z "$alarm_issue" ]; then
                   url=$(gh issue create --repo "$GITHUB_REPOSITORY" --title "$ALARM_TITLE" --body "@$OWNER the sweeper's GT7 login has stopped working, so the club boards are frozen.
 
-          /v1/health: https://sagt-api.vercel.app/v1/health (\`session.alive\` / \`lastError\`)
+          /v1/health: https://api.sagtonline.co.za/v1/health (\`session.alive\` / \`lastError\`)
 
           If it says signed out, the login needs replacing:
           1. Sign in at gran-turismo.com in Chrome, open any GT7 page.
@@ -164,14 +164,14 @@ jobs:
             code=$(curl -s -o /tmp/tick.json -w '%{http_code}' \
               --max-time 70 \
               -H "x-cron-key: $CRON_KEY" \
-              https://sagt-api.vercel.app/api/tick || echo 000)
+              https://api.sagtonline.co.za/api/tick || echo 000)
             if [ "$code" != "200" ]; then
               echo "tick $i -> HTTP $code, retrying once"
               sleep 8
               code=$(curl -s -o /tmp/tick.json -w '%{http_code}' \
                 --max-time 70 \
                 -H "x-cron-key: $CRON_KEY" \
-                https://sagt-api.vercel.app/api/tick || echo 000)
+                https://api.sagtonline.co.za/api/tick || echo 000)
             fi
             echo "tick $i -> HTTP $code"
             if [ "$code" != "200" ]; then
